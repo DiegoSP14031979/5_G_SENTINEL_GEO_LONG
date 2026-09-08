@@ -10,7 +10,6 @@ import MetaTrader5 as mt5
 def main():
     print("Iniciando motor G-SENTINEL GEO (PATA 5)...")
     
-    # 1. Obtener credenciales desde las variables de entorno
     login_env = os.environ.get("MT5_LOGIN", "112321961")
     password = os.environ.get("MT5_PASSWORD", "3aUkLsW_")
     server = os.environ.get("MT5_SERVER", "MetaQuotes-Demo")
@@ -25,7 +24,6 @@ def main():
     active_positions = []
     logs = []
 
-    # 2. Intento de conexión con MetaTrader 5 Terminal
     mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
     
     if os.path.exists(mt5_path):
@@ -48,12 +46,19 @@ def main():
                         active_positions.append({
                             "activo": pos.symbol,
                             "simbolo": pos.symbol,
+                            "symbol": pos.symbol,
                             "entrada": pos.price_open,
+                            "entry": pos.price_open,
                             "actual": pos.price_current,
+                            "current": pos.price_current,
                             "stop_loss": pos.sl,
+                            "sl": pos.sl,
                             "take_profit": pos.tp,
+                            "tp": pos.tp,
                             "riesgo": "1.5%",
-                            "pnl": round(pos.profit, 2)
+                            "risk": "1.5%",
+                            "pnl": round(pos.profit, 2),
+                            "profit": round(pos.profit, 2)
                         })
                 mt5.shutdown()
 
@@ -62,17 +67,21 @@ def main():
         logs.append("Monitoreo geográfico y escaneo macroeconómico de Commodities en ejecución.")
         logs.append("Sin posiciones abiertas según parámetros de la Pata 5.")
 
-    # 3. Construir la estructura completa para la web
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
     
+    # Estructura dual para compatibilidad completa con el frontend index.html
     dashboard_data = {
         "status": "ONLINE",
         "last_update": now_str,
+        "initial_capital": 100000.00,
         "capital_inicial": 100000.00,
+        "equity": round(equity, 2),
         "valor_cartera": round(equity, 2),
+        "active_slots": len(active_positions),
         "slots_activos": len(active_positions),
         "win_rate": "68.5%",
         "profit_factor": "1.85",
+        "positions": active_positions,
         "posiciones": active_positions,
         "logs": [
             f"[{now_str}] G-SENTINEL GEO Engine ejecutado exitosamente.",
@@ -81,7 +90,6 @@ def main():
         ]
     }
 
-    # 4. Guardar archivos de salida para GitHub Pages
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(dashboard_data, f, indent=4, ensure_ascii=False)
 
