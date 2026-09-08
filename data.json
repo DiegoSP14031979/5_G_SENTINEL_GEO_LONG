@@ -1,15 +1,19 @@
 {
     "status": "ONLINE",
-    "last_update": "2026-09-08 10:52:25 UTC",
+    "last_update": "2026-09-08 10:57:31 UTC",
+    "initial_capital": 100000.0,
     "capital_inicial": 100000.0,
+    "equity": 100000.0,
     "valor_cartera": 100000.0,
+    "active_slots": 0,
     "slots_activos": 0,
     "win_rate": "68.5%",
     "profit_factor": "1.85",
+    "positions": [],
     "posiciones": [],
     "logs": [
-        "[2026-09-08 10:52:25 UTC] G-SENTINEL GEO Engine ejecutado exitosamente.",
-        "[2026-09-08 10:52:25 UTC] Modo Cloud/Headless activo. Sincronización remota con cuenta MetaQuotes-Demo 112321961.",
-        "[2026-09-08 10:52:25 UTC] Monitoreo geográfico y escaneo macroeconómico de Commodities en ejecución."
+        "[2026-09-08 10:57:31 UTC] G-SENTINEL GEO Engine ejecutado exitosamente.",
+        "[2026-09-08 10:57:31 UTC] Modo Cloud/Headless activo. Sincronización remota con cuenta MetaQuotes-Demo 112321961.",
+        "[2026-09-08 10:57:31 UTC] Monitoreo geográfico y escaneo macroeconómico de Commodities en ejecución."
     ]
 }
