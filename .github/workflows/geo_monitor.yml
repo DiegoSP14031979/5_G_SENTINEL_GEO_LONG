@@ -27,6 +27,7 @@ jobs:
           pip install MetaTrader5 pandas numpy ta
 
       - name: Download & Install MetaTrader 5 Terminal
+        shell: cmd
         run: |
           curl -sL https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -o mt5setup.exe
           start /wait mt5setup.exe /auto
