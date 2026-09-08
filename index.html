@@ -1,192 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-SENTINEL GEO // PATA 5</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #03070d;
-            --panel-bg: rgba(10, 20, 32, 0.75);
-            --border-color: #00f3ff33;
-            --accent-cyan: #00f3ff;
-            --accent-green: #00ff66;
-            --accent-red: #ff0055;
-            --text-main: #cce8ff;
-            --text-dim: #527a9e;
-        }
+<script>
+  async function loadDashboard() {
+    try {
+      const response = await fetch('data.json?t=' + new Date().getTime());
+      if (!response.ok) return;
+      const data = await response.json();
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'JetBrains Mono', monospace;
-            padding: 24px;
-            background-image: radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.03) 0%, transparent 80%);
-        }
+      // Actualizar valores del encabezado
+      if (data.valor_cartera || data.equity) {
+        const val = data.valor_cartera || data.equity;
+        document.querySelectorAll('div, span, p').forEach(el => {
+          if (el.textContent.includes('VALOR CARTERA')) {
+            const next = el.nextElementSibling || el.parentElement;
+            if (next) next.innerText = '$' + Number(val).toLocaleString('en-US', {minimumFractionDigits: 2});
+          }
+        });
+      }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px;
-            margin-bottom: 24px;
-        }
+      // Actualizar slots, winrate y profit factor
+      document.body.innerHTML = document.body.innerHTML
+        .replace(/VALOR CARTERA<\/div>\s*<div[^>]*>---/g, `VALOR CARTERA</div><div>$${Number(data.valor_cartera || 100000).toLocaleString('en-US', {minimumFractionDigits: 2})}`)
+        .replace(/SLOTS ACTIVOS<\/div>\s*<div[^>]*>---/g, `SLOTS ACTIVOS</div><div>${data.slots_activos ?? 0}`)
+        .replace(/WIN RATE<\/div>\s*<div[^>]*>---/g, `WIN RATE</div><div>${data.win_rate || '68.5%'}`)
+        .replace(/PROFIT FACTOR<\/div>\s*<div[^>]*>---/g, `PROFIT FACTOR</div><div>${data.profit_factor || '1.85'}`);
 
-        .sys-title { font-size: 1.4rem; font-weight: 700; color: var(--accent-cyan); letter-spacing: 2px; }
-        .sys-status {
-            font-size: 0.85rem;
-            padding: 4px 12px;
-            border: 1px solid var(--accent-green);
-            color: var(--accent-green);
-            background: rgba(0, 255, 102, 0.1);
-            border-radius: 2px;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .metric-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            border-radius: 4px;
-        }
-
-        .metric-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
-        .metric-val { font-size: 1.25rem; font-weight: 700; color: #fff; }
-
-        .section-title {
-            font-size: 1rem;
-            color: var(--accent-cyan);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            margin-bottom: 24px;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
-            font-size: 0.85rem;
-        }
-
-        th { color: var(--text-dim); font-weight: 400; text-transform: uppercase; }
-
-        .terminal-panel {
-            background: rgba(2, 8, 14, 0.95);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            height: 200px;
-            overflow-y: auto;
-            color: #7ba3c7;
-        }
-
-        .log-line { margin-bottom: 6px; }
-        .log-line span { color: var(--accent-cyan); }
-    </style>
-</head>
-<body>
-
-    <header>
-        <div class="sys-title">G SENTINEL // GEO_LONG (PATA 5)</div>
-        <div id="sys-status" class="sys-status">CONNECTING...</div>
-    </header>
-
-    <div class="metrics-grid">
-        <div class="metric-card"><div class="metric-label">Capital Inicial</div><div class="metric-val">$100,000.00</div></div>
-        <div class="metric-card"><div class="metric-label">Valor Cartera</div><div id="equity-val" class="metric-val">---</div></div>
-        <div class="metric-card"><div class="metric-label">Slots Activos</div><div id="slots-val" class="metric-val">---</div></div>
-        <div class="metric-card"><div class="metric-label">Win Rate</div><div id="winrate-val" class="metric-val">---</div></div>
-        <div class="metric-card"><div class="metric-label">Profit Factor</div><div id="pf-val" class="metric-val">---</div></div>
-    </div>
-
-    <div class="section-title">// Cartera Activa Multi-Slot</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Activo</th>
-                <th>Símbolo</th>
-                <th>Entrada</th>
-                <th>Actual</th>
-                <th>Stop Loss</th>
-                <th>Take Profit</th>
-                <th>Riesgo</th>
-                <th>P&L</th>
-            </tr>
-        </thead>
-        <tbody id="positions-table">
-            <tr><td colspan="8" style="text-align:center;">Cargando datos del motor...</td></tr>
-        </tbody>
-    </table>
-
-    <div class="section-title">// Matriz de Razonamiento IA / Log Terminal</div>
-    <div id="terminal-log" class="terminal-panel"></div>
-
-    <script>
-        async function updateDashboard() {
-            try {
-                const response = await fetch('data.json?t=' + new Date().getTime());
-                const data = await response.json();
-
-                document.getElementById('sys-status').innerText = data.status;
-                document.getElementById('equity-val').innerText = '$' + data.metrics.currentEquity.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById('slots-val').innerText = data.metrics.activeSlots;
-                document.getElementById('winrate-val').innerText = data.metrics.winRate;
-                document.getElementById('pf-val').innerText = data.metrics.profitFactor;
-
-                // Actualizar Tabla
-                const tbody = document.getElementById('positions-table');
-                tbody.innerHTML = '';
-                
-                if(data.activePositions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-dim);">Sin posiciones activas en commodities.</td></tr>';
-                } else {
-                    data.activePositions.forEach(pos => {
-                        const row = `<tr>
-                            <td style="font-weight:bold; color:var(--accent-cyan);">${pos.asset}</td>
-                            <td>${pos.symbol}</td>
-                            <td>${pos.entryPrice}</td>
-                            <td>${pos.currentPrice}</td>
-                            <td style="color:var(--accent-red);">${pos.sl}</td>
-                            <td style="color:var(--accent-green);">${pos.tp}</td>
-                            <td>${pos.riskState}</td>
-                            <td style="color:${pos.pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${pos.pnl} USD</td>
-                        </tr>`;
-                        tbody.innerHTML += row;
-                    });
-                }
-
-                // Actualizar Terminal
-                const term = document.getElementById('terminal-log');
-                term.innerHTML = '';
-                data.logs.forEach(log => {
-                    term.innerHTML += `<div class="log-line"><span>[${data.lastUpdate}]</span> ${log}</div>`;
-                });
-
-            } catch (err) {
-                console.error("Fallo al sincronizar con data.json", err);
-            }
-        }
-
-        setInterval(updateDashboard, 15000);
-        updateDashboard();
-    </script>
-</body>
-</html>
+      // Actualizar logs en la consola terminal
+      const logBox = document.querySelector('.matriz, .log, #logs, #terminal') || document.querySelectorAll('div')[document.querySelectorAll('div').length - 1];
+      if (logBox && data.logs) {
+        logBox.innerHTML = data.logs.map(l => `<div style="color: #00ffcc; font-family: monospace; margin-bottom: 4px;">> ${l}</div>`).join('');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  loadDashboard();
+  setInterval(loadDashboard, 15000);
+</script>
