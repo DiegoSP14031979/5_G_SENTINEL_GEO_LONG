@@ -1,37 +1,236 @@
-<script>
-  async function loadDashboard() {
-    try {
-      const response = await fetch('data.json?t=' + new Date().getTime());
-      if (!response.ok) return;
-      const data = await response.json();
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G SENTINEL // GEO_LONG (PATA 5)</title>
+    <style>
+        :root {
+            --bg-color: #050b14;
+            --card-bg: #0a192f;
+            --border-color: #1e3a5f;
+            --text-color: #8892b0;
+            --accent-color: #00ffcc;
+            --green-color: #00e676;
+            --font-family: 'Courier New', Courier, monospace;
+        }
 
-      // Actualizar valores del encabezado
-      if (data.valor_cartera || data.equity) {
-        const val = data.valor_cartera || data.equity;
-        document.querySelectorAll('div, span, p').forEach(el => {
-          if (el.textContent.includes('VALOR CARTERA')) {
-            const next = el.nextElementSibling || el.parentElement;
-            if (next) next.innerText = '$' + Number(val).toLocaleString('en-US', {minimumFractionDigits: 2});
-          }
-        });
-      }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 20px;
+        }
 
-      // Actualizar slots, winrate y profit factor
-      document.body.innerHTML = document.body.innerHTML
-        .replace(/VALOR CARTERA<\/div>\s*<div[^>]*>---/g, `VALOR CARTERA</div><div>$${Number(data.valor_cartera || 100000).toLocaleString('en-US', {minimumFractionDigits: 2})}`)
-        .replace(/SLOTS ACTIVOS<\/div>\s*<div[^>]*>---/g, `SLOTS ACTIVOS</div><div>${data.slots_activos ?? 0}`)
-        .replace(/WIN RATE<\/div>\s*<div[^>]*>---/g, `WIN RATE</div><div>${data.win_rate || '68.5%'}`)
-        .replace(/PROFIT FACTOR<\/div>\s*<div[^>]*>---/g, `PROFIT FACTOR</div><div>${data.profit_factor || '1.85'}`);
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
 
-      // Actualizar logs en la consola terminal
-      const logBox = document.querySelector('.matriz, .log, #logs, #terminal') || document.querySelectorAll('div')[document.querySelectorAll('div').length - 1];
-      if (logBox && data.logs) {
-        logBox.innerHTML = data.logs.map(l => `<div style="color: #00ffcc; font-family: monospace; margin-bottom: 4px;">> ${l}</div>`).join('');
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  loadDashboard();
-  setInterval(loadDashboard, 15000);
-</script>
+        .title {
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .status-badge {
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--green-color);
+            border: 1px solid var(--green-color);
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .section-title {
+            color: var(--accent-color);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        th {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .empty-row {
+            text-align: center;
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .terminal-box {
+            background: #02060d;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .log-line {
+            color: var(--accent-color);
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title">G SENTINEL // GEO_LONG (PATA 5)</div>
+        <div class="status-badge" id="status-badge">CONNECTING...</div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Capital Inicial</div>
+            <div class="metric-value" id="val-capital">$100,000.00</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Valor Cartera</div>
+            <div class="metric-value" id="val-cartera">---</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Slots Activos</div>
+            <div class="metric-value" id="val-slots">---</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Win Rate</div>
+            <div class="metric-value" id="val-winrate">---</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Profit Factor</div>
+            <div class="metric-value" id="val-profit">---</div>
+        </div>
+    </div>
+
+    <div class="section-title">// CARTERA ACTIVA MULTI-SLOT</div>
+    <table>
+        <thead>
+            <tr>
+                <th>ACTIVO</th>
+                <th>SÍMBOLO</th>
+                <th>ENTRADA</th>
+                <th>ACTUAL</th>
+                <th>STOP LOSS</th>
+                <th>TAKE PROFIT</th>
+                <th>RIESGO</th>
+                <th>P&L</th>
+            </tr>
+        </thead>
+        <tbody id="positions-body">
+            <tr>
+                <td colspan="8" class="empty-row">Cargando datos del motor...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-title">// MATRIZ DE RAZONAMIENTO IA / LOG TERMINAL</div>
+    <div class="terminal-box" id="terminal-box">
+        <div class="log-line">> Inicializando conexión con data.json...</div>
+    </div>
+
+    <script>
+        async function fetchDashboardData() {
+            try {
+                const res = await fetch('data.json?cache=' + new Date().getTime());
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Actualizar Estado
+                document.getElementById('status-badge').innerText = data.status || 'ONLINE';
+
+                // Actualizar Tarjetas de Métricas
+                const equity = data.valor_cartera || data.equity || 100000;
+                document.getElementById('val-cartera').innerText = '$' + Number(equity).toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('val-slots').innerText = data.slots_activos ?? data.active_slots ?? 0;
+                document.getElementById('val-winrate').innerText = data.win_rate || '68.5%';
+                document.getElementById('val-profit').innerText = data.profit_factor || '1.85';
+
+                // Actualizar Tabla de Posiciones
+                const tbody = document.getElementById('positions-body');
+                const positions = data.posiciones || data.positions || [];
+                
+                if (positions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Sin posiciones activas en el mercado.</td></tr>';
+                } else {
+                    tbody.innerHTML = positions.map(p => `
+                        <tr>
+                            <td>${p.activo || p.symbol}</td>
+                            <td>${p.simbolo || p.symbol}</td>
+                            <td>${p.entrada || p.entry}</td>
+                            <td>${p.actual || p.current}</td>
+                            <td>${p.stop_loss || p.sl}</td>
+                            <td>${p.take_profit || p.tp}</td>
+                            <td>${p.riesgo || p.risk}</td>
+                            <td style="color: ${p.pnl >= 0 ? '#00e676' : '#ff5252'}">$${p.pnl || p.profit}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Actualizar Logs del Terminal
+                const terminal = document.getElementById('terminal-box');
+                const logs = data.logs || [];
+                if (logs.length > 0) {
+                    terminal.innerHTML = logs.map(l => `<div class="log-line">> ${l}</div>`).join('');
+                }
+
+            } catch (err) {
+                console.error("Error al cargar data.json:", err);
+            }
+        }
+
+        fetchDashboardData();
+        setInterval(fetchDashboardData, 10000);
+    </script>
+</body>
+</html>
