@@ -9,6 +9,9 @@ jobs:
   run-geo-engine:
     runs-on: windows-latest
 
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -30,3 +33,10 @@ jobs:
           MT5_SERVER: ${{ secrets.MT5_SERVER }}
         run: |
           python geo_long_engine.py
+
+      - name: Commit and Push Dashboard Data
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json status.json || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update dashboard data [skip ci]" && git push)
