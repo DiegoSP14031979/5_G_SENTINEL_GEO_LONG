@@ -24,8 +24,16 @@ def main():
         print(f"ERROR: MT5_LOGIN debe ser un entero numérico. Valor recibido: {login_env}")
         sys.exit(1)
 
-    # 2. Inicializar MetaTrader 5
-    if not mt5.initialize():
+    # 2. Inicializar MetaTrader 5 especificando la ruta estándar de instalación
+    mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+    
+    if os.path.exists(mt5_path):
+        initialized = mt5.initialize(path=mt5_path)
+    else:
+        # Intento de inicialización por defecto si está en otra ruta del sistema
+        initialized = mt5.initialize()
+
+    if not initialized:
         print(f"ERROR: Fallo al inicializar MetaTrader 5: {mt5.last_error()}")
         sys.exit(1)
 
