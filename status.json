@@ -1,6 +1,6 @@
 {
     "status": "ONLINE",
-    "last_update": "2026-09-09 05:14:32 UTC",
+    "last_update": "2026-09-09 05:31:57 UTC",
     "capital_inicial": 100000.0,
     "valor_cartera": 100000.0,
     "slots_activos": 0,
@@ -8,7 +8,7 @@
     "profit_factor": "2.15",
     "posiciones": [],
     "logs": [
-        "[2026-09-09 05:14:32 UTC] MT5 Terminal local no detectada. Ejecutando escaneo desatendido.",
-        "[2026-09-09 05:14:32 UTC] Escaneo en la nube completado. Esperando disparador de señal."
+        "[2026-09-09 05:31:57 UTC] MT5 Terminal local no detectada. Ejecutando escaneo desatendido.",
+        "[2026-09-09 05:31:57 UTC] Escaneo en la nube completado. Esperando disparador de señal."
     ]
 }
